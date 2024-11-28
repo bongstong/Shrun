@@ -4,7 +4,8 @@ You must run and jump over rocks
 # TO RUN THE GAME
 First, you must have python installed.
 Then, you must activate the virtual environment as the program requires some
-additional libraries. in order to activate the virtual environment run:
+additional libraries. in order to activate the virtual environment
+run these commands.
 On `Linux` or any `Unix` (like Macos) system
 ```sh
 source env/bin/activate
