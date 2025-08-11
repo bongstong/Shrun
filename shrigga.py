@@ -1,5 +1,3 @@
-# import all the librarys
-from typing import Any
 import pygame
 import random
 from pygame import mixer
@@ -16,6 +14,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 ground_scroll = 0
 pygame.display.set_caption("Shrigga")
 
+already_paused: bool = False  # check if game already paused
 # game variables
 GROUND = 650
 counter = 0
@@ -95,7 +94,7 @@ class Ninja(pygame.sprite.Sprite):
             self.vel = 0
 
         # jump
-        if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+        if pygame.mouse.get_pressed()[0] == 1 and self.clicked is False:
             self.clicked = True
             self.vel = -10.5
             self.count += 1
@@ -193,7 +192,7 @@ class Platform(pygame.sprite.Sprite):
         self.image = pygame.image.load(f"./assets/platforms/platform{n}.png")
         self.image = pygame.transform.scale(self.image, (167.8, 68.6))
         self.rect = self.image.get_rect()
-        self.rect.topleft = [x, y]
+        self.rect.topleft = (x, y)
 
     def update(self):
         self.rect.x -= scroll_speed
@@ -212,7 +211,7 @@ class Platform_in_big_air(pygame.sprite.Sprite):
         self.image = pygame.image.load(f"./assets/platforms/platform{n}.png")
         self.image = pygame.transform.scale(self.image, (167.8, 68.6))
         self.rect = self.image.get_rect()
-        self.rect.topleft = [x, y]
+        self.rect.topleft = (x, y)
 
     def update(self):
         self.rect.x -= scroll_speed
@@ -241,7 +240,7 @@ class Button:
 
         # check mouseover and clicked conditions
         if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked is False:
                 self.clicked = True
                 action = True
 
@@ -294,12 +293,13 @@ while is_game_active:
     platform_group.update()
     big_platform_group.draw(screen)
     big_platform_group.update()
+    print(already_paused)
 
     # draw score
     draw_text("score: " + str(score), score_font, RED, 20, 20)
     draw_text("high score: " + str(high_score), score_font, RED, 20, 60)
 
-    if game_over == False:
+    if game_over is False:
         obstacle_frequency = random.randint(1500, 7500)  # milliseconds
 
         # generate obstacles
@@ -317,7 +317,10 @@ while is_game_active:
 
         # Generate platforms
         if time_now - last_platform > platform_frequency:
-            air_platform = Platform(SCREEN_WIDTH, random.randint(100, GROUND - 55))
+            air_platform = Platform(
+                SCREEN_WIDTH,
+                random.randint(100, GROUND - 55),
+            )
             platform_group.add(air_platform)
             last_platform = time_now
 
@@ -375,13 +378,15 @@ while is_game_active:
         ground_scroll += 2
 
     # check if the game is paused
-    if game_paused == True:
+    if game_paused is True:
         pygame.mixer.music.stop()
         screen.blit(background_menu, (0, 0))
         start_button.draw(screen)
         exit_button.draw(screen)
 
-        if start_button.clicked:  # Check if the start button is clicked
+        # Check if the start button is clicked after pausing
+        if start_button.clicked:
+            already_paused: bool = False
             game_paused = False
             game_over = False
             scroll_speed = old_scroll_speed
@@ -394,13 +399,14 @@ while is_game_active:
         if exit_button.clicked:  # Check if the exit button is clicked
             pygame.quit()
 
-    if game_over == True:
+    if game_over is True:
         pygame.mixer.music.stop()
         screen.blit(background_menu, (0, 0))
         restart_button.draw(screen)
         game_over_exit_button.draw(screen)
 
-        if restart_button.clicked:  # Check if the start button is clicked
+        # Check if the start button is clicked after dying
+        if restart_button.clicked:
             score = 0
             game_over = False
             scroll_speed = 6
@@ -410,7 +416,8 @@ while is_game_active:
             menu_channel.stop()
             pygame.mixer.music.play()
 
-        if game_over_exit_button.clicked:  # Check if the exit button is clicked
+        # Check if the exit button is clicked
+        if game_over_exit_button.clicked:
             pygame.quit()
 
     for event in pygame.event.get():  # event handler
@@ -418,10 +425,11 @@ while is_game_active:
             print("Quit")
             is_game_active = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE and already_paused is False:
+                game_paused = True
+                already_paused: bool = True
                 # reparameter the game settings
                 # to stop the game
-                game_paused = True
                 old_scroll_speed = scroll_speed
                 old_obstacle_frequency = obstacle_frequency
                 old_coin_frequency = coin_frequency
